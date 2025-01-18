@@ -1,12 +1,12 @@
 import os
 import re
 import sys
-import pikepdf
 from pathlib import Path
 from typing import List
 from dotenv import load_dotenv
 from PIL import Image
 from PyPDF2 import PdfMerger
+import pikepdf
 
 
 def natural_sort_key(file_name: str) -> List:
@@ -121,7 +121,7 @@ def combine_files(input_directory: Path, output_file: Path) -> None:
     if output_file.exists() and output_file.stat().st_size > 6 * 1024 * 1024:  # 6MB threshold
         print(f"PDF is larger than 6MB, compressing it...")
         # Compress the PDF if it's larger than 6MB
-        compressed_pdf_path = input_directory / f"compressed_{output_file.name}"
+        compressed_pdf_path = input_directory / "outputs" / f"compressed_{output_file.name}"
         compress_pdf(output_file, compressed_pdf_path)
 
         # Replace the original PDF with the compressed one if compression is successful
@@ -151,9 +151,13 @@ def main():
         print(f"Error: Directory '{input_directory}' does not exist.")
         sys.exit(1)
 
+    # Ensure the outputs directory exists
+    output_dir = input_directory / "outputs"
+    output_dir.mkdir(parents=True, exist_ok=True)
+
     # If OUTPUT_FILENAME is not provided, derive it from INPUT_DIRECTORY's parent directory
     if not output_file:
-        output_file = input_directory.parent / f"{input_directory.name}.pdf"
+        output_file = output_dir / f"{input_directory.name}.pdf"
 
     output_file = Path(output_file)
 
