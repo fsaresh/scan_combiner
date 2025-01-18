@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "scan-combiner"
+version = "0.1.0"
+description = ""
+authors = ["Farhan Sareshwala <p.git@fsaresh.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+pillow = "^11.1.0"
+pypdf2 = "^3.0.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+scan-combiner = "scan_combiner.main:combine_files_to_pdf"
