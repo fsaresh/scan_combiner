@@ -12,8 +12,11 @@ def natural_sort_key(file_name: str) -> List:
     """
     Generate a sort key that treats 'Scan.jpg' and 'Scan.jpeg' as first, followed by numbered files sorted naturally.
     """
-    if file_name.lower() in ["scan.jpg", "scan.jpeg"]:
-        return [-1]  # Give 'Scan.jpg' and 'Scan.jpeg' highest priority
+    # Give 'Scan.jpg' and 'Scan.jpeg' priority to come first in sorting
+    if file_name.lower() == "scan.jpg" or file_name.lower() == "scan.jpeg":
+        return ["0"]  # Assign '0' to Scan.jpg and Scan.jpeg to make them appear first
+
+    # For other files, extract the numeric parts and sort naturally
     return [int(text) if text.isdigit() else text.lower() for text in re.split(r'(\d+)', file_name)]
 
 
