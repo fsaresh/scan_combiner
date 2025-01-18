@@ -1,8 +1,8 @@
 # Ignore everything under scan_combiner/.idea
-scan_combiner/.idea/
+.idea/
 
 # Ignore all PDF output files
 *.pdf
 
 # Ignore everything under scan_combiner/scan_combiner/__pycache__
-scan_combiner/scan_combiner/__pycache__/
+scan_combiner/__pycache__/
