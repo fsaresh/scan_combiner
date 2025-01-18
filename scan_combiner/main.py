@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+import pikepdf
 from pathlib import Path
 from typing import List
 from dotenv import load_dotenv
@@ -39,6 +40,7 @@ def process_images(files: List[Path]) -> List[Image.Image]:
     for file in files:
         try:
             img = Image.open(file).convert("RGB")
+            img.thumbnail((1600, 1600))  # Resize to fit within 1600x1600
             images.append(img)
         except Exception as e:
             print(f"Warning: Could not process image {file.name}: {e}")
@@ -63,6 +65,20 @@ def append_pdfs(pdf_merger: PdfMerger, files: List[Path]) -> None:
             pdf_merger.append(str(file))
         except Exception as e:
             print(f"Warning: Could not process PDF {file.name}: {e}")
+
+
+def compress_pdf(input_pdf: Path, output_pdf: Path) -> None:
+    """
+    Compress the PDF if it's too large (over 6MB).
+    """
+    try:
+        # Open the PDF using pikepdf
+        with pikepdf.open(input_pdf) as pdf:
+            # Compress and save it
+            pdf.save(output_pdf, compress_streams=True)
+            print(f"Compressed PDF saved to '{output_pdf}'.")
+    except Exception as e:
+        print(f"Error: Could not compress the PDF: {e}")
 
 
 def combine_files(input_directory: Path, output_file: Path) -> None:
@@ -92,7 +108,7 @@ def combine_files(input_directory: Path, output_file: Path) -> None:
     # Append existing PDFs
     append_pdfs(pdf_merger, pdf_files)
 
-    # Write final PDF
+    # Write the final PDF before checking size
     try:
         pdf_merger.write(str(output_file))
         print(f"Success: Combined PDF saved to '{output_file}'.")
@@ -101,9 +117,19 @@ def combine_files(input_directory: Path, output_file: Path) -> None:
     finally:
         pdf_merger.close()
 
-    # Clean up temporary files
-    if temp_pdf_path.exists():
-        temp_pdf_path.unlink()
+    # Check the size of the generated PDF
+    if output_file.exists() and output_file.stat().st_size > 6 * 1024 * 1024:  # 6MB threshold
+        print(f"PDF is larger than 6MB, compressing it...")
+        # Compress the PDF if it's larger than 6MB
+        compressed_pdf_path = input_directory / f"compressed_{output_file.name}"
+        compress_pdf(output_file, compressed_pdf_path)
+
+        # Replace the original PDF with the compressed one if compression is successful
+        if compressed_pdf_path.exists():
+            output_file.unlink()  # Delete the original, uncompressed file
+            compressed_pdf_path.rename(output_file)
+    else:
+        print(f"PDF size is under 6MB, no compression needed.")
 
 
 def main():
@@ -125,12 +151,13 @@ def main():
         print(f"Error: Directory '{input_directory}' does not exist.")
         sys.exit(1)
 
-    # If OUTPUT_FILENAME is not provided, derive it from INPUT_DIRECTORY
+    # If OUTPUT_FILENAME is not provided, derive it from INPUT_DIRECTORY's parent directory
     if not output_file:
         output_file = input_directory.parent / f"{input_directory.name}.pdf"
 
     output_file = Path(output_file)
 
+    # Run the combining process
     combine_files(input_directory, output_file)
 
 
