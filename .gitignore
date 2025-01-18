@@ -4,7 +4,7 @@
 # Ignore all PDF output files
 *.pdf
 
-# Ignore .env files
+# Ignore .env file
 scan_combiner/.env
 
 # Ignore everything under scan_combiner/scan_combiner/__pycache__
