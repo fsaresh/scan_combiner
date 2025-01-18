@@ -125,12 +125,11 @@ def main():
         print(f"Error: Directory '{input_directory}' does not exist.")
         sys.exit(1)
 
-    # Set default for output_file if not provided
+    # If OUTPUT_FILENAME is not provided, derive it from INPUT_DIRECTORY
     if not output_file:
-        terminal_directory = input_directory.name
-        output_file = input_directory / f"{terminal_directory}.pdf"
-    else:
-        output_file = Path(output_file)
+        output_file = input_directory.parent / f"{input_directory.name}.pdf"
+
+    output_file = Path(output_file)
 
     combine_files(input_directory, output_file)
 
