@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import os
 import re
 import sys
@@ -13,7 +15,7 @@ def natural_sort_key(file_name: str) -> List:
     """
     Generate a sort key that treats 'Scan.jpg' and 'Scan.jpeg' as first, followed by numbered files sorted naturally.
     """
-    if file_name.lower() == "scan.jpg" or file_name.lower() == "scan.jpeg":
+    if file_name.lower() in ("scan.jpg", "scan.jpeg"):
         return ["0"]  # Assign '0' to Scan.jpg and Scan.jpeg to make them appear first
     return [int(text) if text.isdigit() else text.lower() for text in re.split(r'(\d+)', file_name)]
 
@@ -22,9 +24,10 @@ def get_sorted_files(input_directory: Path) -> List[Path]:
     """
     Get all files matching 'Scan*.jpg', 'Scan*.jpeg', or 'Scan*.pdf' in the directory, sorted naturally.
     """
+    valid_extensions = {".jpg", ".jpeg", ".pdf"}
     files = [
         f for f in input_directory.iterdir()
-        if f.name.lower().startswith("scan") and f.suffix.lower() in [".jpg", ".jpeg", ".pdf"]
+        if f.name.lower().startswith("scan") and f.suffix.lower() in valid_extensions
     ]
     return sorted(files, key=lambda f: natural_sort_key(f.name))
 
@@ -126,7 +129,8 @@ def combine_files(input_directory: Path, output_file: Path) -> None:
         return
 
     # Separate image and PDF files
-    image_files = [f for f in files if f.suffix.lower() in [".jpg", ".jpeg"]]
+    image_extensions = {".jpg", ".jpeg"}
+    image_files = [f for f in files if f.suffix.lower() in image_extensions]
     pdf_files = [f for f in files if f.suffix.lower() == ".pdf"]
 
     # Process images
@@ -157,11 +161,11 @@ def combine_files(input_directory: Path, output_file: Path) -> None:
     check_pdf_size_and_compress(output_file, input_directory)
 
 
-def main():
+def main() -> None:
     """
     Entry point of the script.
     """
-    load_dotenv()  # Load environment variables from .env file
+    load_dotenv()
 
     input_directory = os.getenv("INPUT_DIRECTORY")
     output_file = os.getenv("OUTPUT_FILENAME")
@@ -183,8 +187,8 @@ def main():
     # If OUTPUT_FILENAME is not provided, derive it from INPUT_DIRECTORY's parent directory
     if not output_file:
         output_file = output_dir / f"{input_directory.name}.pdf"
-
-    output_file = Path(output_file)
+    else:
+        output_file = Path(output_file)
 
     # Run the combining process
     combine_files(input_directory, output_file)

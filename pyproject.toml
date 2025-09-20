@@ -12,6 +12,10 @@ pypdf2 = "^3.0.1"
 
 python-dotenv = "^1.0.1"
 pikepdf = "^9.5.1"
+xmltodict = "^0.14.2"
+papersize = "^1.6.0"
+requests = "^2.32.4"
+zeroconf = "^0.147.0"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
