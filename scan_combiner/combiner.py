@@ -6,7 +6,7 @@ import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional
+from typing import List
 from dotenv import load_dotenv
 from PIL import Image
 from PyPDF2 import PdfMerger
@@ -27,7 +27,6 @@ class FileProcessingError(CombinerError):
 class CombinerConfig:
     """Configuration for combiner operations."""
     scan_directory: str
-    output_filename: Optional[str] = None
     compression_threshold_mb: int = 6
     thumbnail_size: int = 1600
 
@@ -120,7 +119,7 @@ def check_pdf_size_and_compress(output_file: Path, input_directory: Path, compre
     threshold_bytes = compression_threshold_mb * 1024 * 1024
     if output_file.exists() and output_file.stat().st_size > threshold_bytes:
         print(f"PDF is larger than {compression_threshold_mb}MB, compressing it...")
-        compressed_pdf_path = input_directory / "outputs" / f"compressed_{output_file.name}"
+        compressed_pdf_path = output_file.parent / f"compressed_{output_file.name}"
         compress_pdf(output_file, compressed_pdf_path)
 
         # Replace the original PDF with the compressed one if compression is successful
@@ -140,7 +139,7 @@ def cleanup_temp_files(temp_pdf_path: Path) -> None:
         print(f"Temporary file '{temp_pdf_path}' cleaned up.")
 
 
-def combine_files(input_directory: Path, output_file: Path, config: Optional[CombinerConfig] = None) -> None:
+def combine_files(input_directory: Path, output_file: Path, config: CombinerConfig = None) -> None:
     """
     Main function to combine images and PDFs into a single PDF.
     """
@@ -194,7 +193,6 @@ def parse_arguments() -> CombinerConfig:
     """
     # Get defaults from environment variables
     env_scan_directory = os.getenv('SCAN_DIRECTORY')
-    env_output_filename = os.getenv('OUTPUT_FILENAME')
     env_compression_threshold_mb = int(os.getenv('COMPRESSION_THRESHOLD_MB', '6'))
     env_thumbnail_size = int(os.getenv('THUMBNAIL_SIZE', '1600'))
 
@@ -205,10 +203,6 @@ def parse_arguments() -> CombinerConfig:
     parser.add_argument(
         'scan_directory', nargs='?', default=env_scan_directory,
         help='Directory containing scan files to combine'
-    )
-    parser.add_argument(
-        '--output', '-o', default=env_output_filename,
-        help='Output PDF filename (default: derived from scan directory name)'
     )
     parser.add_argument(
         '--compression-threshold-mb', '-c', type=int, default=env_compression_threshold_mb,
@@ -226,7 +220,6 @@ def parse_arguments() -> CombinerConfig:
 
     return CombinerConfig(
         scan_directory=args.scan_directory,
-        output_filename=args.output,
         compression_threshold_mb=args.compression_threshold_mb,
         thumbnail_size=args.thumbnail_size
     )
@@ -241,17 +234,8 @@ def process_config(config: CombinerConfig) -> tuple[Path, Path]:
     if not scan_directory.is_dir():
         raise FileNotFoundError(f"Directory '{scan_directory}' does not exist")
 
-    # Ensure the outputs directory exists
-    output_dir = scan_directory.parent / "outputs"
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    # Determine output filename
-    if config.output_filename:
-        output_file = Path(config.output_filename)
-        if not output_file.is_absolute():
-            output_file = output_dir / output_file
-    else:
-        output_file = output_dir / f"{scan_directory.name}.pdf"
+    # Set output filename based on scan directory name
+    output_file = scan_directory / f"{scan_directory.name}.pdf"
 
     return scan_directory, output_file
 
