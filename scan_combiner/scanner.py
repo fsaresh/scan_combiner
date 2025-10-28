@@ -355,25 +355,34 @@ def parse_region(region: str) -> ScanRegion:
 def parse_arguments() -> ScannerConfig:
     """
     Parse command line arguments and return configuration.
+    Environment variables are used as defaults, with command line taking priority.
     """
+    # Get defaults from environment variables
+    env_source = os.getenv('SCAN_SOURCE', 'automatic')
+    env_format = os.getenv('SCAN_FORMAT', 'pdf')
+    env_resolution = int(os.getenv('SCAN_RESOLUTION', '200'))
+    env_duplex = os.getenv('SCAN_DUPLEX', 'false').lower() in ('true', '1', 'yes')
+    env_region = os.getenv('SCAN_REGION')
+    env_filename = os.getenv('SCAN_FILENAME', 'Scan.jpeg')
+
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
         '--source', '-S',
-        choices=['feeder', 'flatbed', 'automatic'], default='automatic')
+        choices=['feeder', 'flatbed', 'automatic'], default=env_source)
     parser.add_argument(
-        '--format', '-f', choices=['pdf', 'jpeg'], default='pdf')
+        '--format', '-f', choices=['pdf', 'jpeg'], default=env_format)
     parser.add_argument(
-        '--resolution', '-r', type=int, default=200,
+        '--resolution', '-r', type=int, default=env_resolution,
         choices=[75, 100, 200, 300, 600])
-    parser.add_argument('--duplex', '-D', action='store_true')
+    parser.add_argument('--duplex', '-D', action='store_true', default=env_duplex)
     parser.add_argument(
-        '--region', '-R',
+        '--region', '-R', default=env_region,
         help='Specify a region to scan. Either a paper size as understood by '
             'the papersize library (https://papersize.readthedocs.io) or the format '
             '"Xoffset:Yoffset:Width:Height", with units understood by the '
             'papersize library. For example: 1cm:1.5cm:10cm:20cm')
-    parser.add_argument('filename', nargs='?', default='Scan.jpeg')
+    parser.add_argument('filename', nargs='?', default=env_filename)
 
     args = parser.parse_args()
 
