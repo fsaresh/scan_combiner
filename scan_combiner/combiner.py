@@ -15,7 +15,7 @@ def natural_sort_key(file_name: str) -> List:
     """
     Generate a sort key that treats 'Scan.jpg' and 'Scan.jpeg' as first, followed by numbered files sorted naturally.
     """
-    if file_name.lower() in ("scan.jpg", "scan.jpeg"):
+    if file_name.lower().startswith("scan."):
         return ["0"]  # Assign '0' to Scan.jpg and Scan.jpeg to make them appear first
     return [int(text) if text.isdigit() else text.lower() for text in re.split(r'(\d+)', file_name)]
 
@@ -167,31 +167,31 @@ def main() -> None:
     """
     load_dotenv()
 
-    input_directory = os.getenv("INPUT_DIRECTORY")
+    scan_directory = os.getenv("SCAN_DIRECTORY")
     output_file = os.getenv("OUTPUT_FILENAME")
 
-    if not input_directory:
-        print("Error: Missing INPUT_DIRECTORY in the .env file.")
+    if not scan_directory:
+        print("Error: Missing SCAN_DIRECTORY in the .env file.")
         sys.exit(1)
 
-    input_directory = Path(input_directory)
+    scan_directory = Path(scan_directory)
 
-    if not input_directory.is_dir():
-        print(f"Error: Directory '{input_directory}' does not exist.")
+    if not scan_directory.is_dir():
+        print(f"Error: Directory '{scan_directory}' does not exist.")
         sys.exit(1)
 
     # Ensure the outputs directory exists
-    output_dir = input_directory.parent / "outputs"
+    output_dir = scan_directory.parent / "outputs"
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # If OUTPUT_FILENAME is not provided, derive it from INPUT_DIRECTORY's parent directory
+    # If OUTPUT_FILENAME is not provided, derive it from SCAN_DIRECTORY's parent directory
     if not output_file:
-        output_file = output_dir / f"{input_directory.name}.pdf"
+        output_file = output_dir / f"{scan_directory.name}.pdf"
     else:
         output_file = Path(output_file)
 
     # Run the combining process
-    combine_files(input_directory, output_file)
+    combine_files(scan_directory, output_file)
 
 
 if __name__ == "__main__":
