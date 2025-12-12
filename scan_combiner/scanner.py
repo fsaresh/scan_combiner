@@ -360,9 +360,9 @@ def parse_arguments() -> ScannerConfig:
     # Get defaults from environment variables
     env_source = os.getenv('SCAN_SOURCE', 'automatic')
     env_format = os.getenv('SCAN_FORMAT', 'pdf')
-    env_resolution = int(os.getenv('SCAN_RESOLUTION', '200'))
+    env_resolution = int(os.getenv('SCAN_RESOLUTION', '300'))
     env_duplex = os.getenv('SCAN_DUPLEX', 'false').lower() in ('true', '1', 'yes')
-    env_region = os.getenv('SCAN_REGION')
+    env_region = os.getenv('SCAN_REGION', "letter")
     env_filename = os.getenv('SCAN_FILENAME', 'Scan.jpeg')
 
     parser = argparse.ArgumentParser()
