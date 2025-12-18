@@ -245,6 +245,15 @@ class ScannerClient:
         resp.raise_for_status()
         return resp.content
 
+    def cancel_job(self, job_uri: str) -> None:
+        """Cancel a scan job."""
+        try:
+            resp = self.session.delete(job_uri)
+            if resp.status_code not in [200, 204, 404]:
+                resp.raise_for_status()
+        except Exception as e:
+            print(f"Warning: Failed to cancel scan job: {e}", file=sys.stderr)
+
 
 class ScanJob:
     """Handles scan job processing and file saving."""
@@ -258,30 +267,37 @@ class ScanJob:
 
     def execute(self, region: Optional[ScanRegion] = None) -> None:
         """Execute the scan job."""
-        # Create the scan job
-        self.job_uri = self.client.create_scan_job(region)
-        self.job_uuid = self.job_uri.split('/')[-1]
+        try:
+            # Create the scan job
+            self.job_uri = self.client.create_scan_job(region)
+            self.job_uuid = self.job_uri.split('/')[-1]
 
-        # Process scan results
-        page = 1
-        while True:
-            status, jobinfo = self.client.get_job_status(self.job_uuid)
+            # Process scan results
+            page = 1
+            while True:
+                status, jobinfo = self.client.get_job_status(self.job_uuid)
 
-            # Get next document
-            document_data = self.client.get_next_document(self.job_uri)
-            if document_data is None:
-                break
+                # Get next document
+                document_data = self.client.get_next_document(self.job_uri)
+                if document_data is None:
+                    break
 
-            # Save the document
-            self._save_document(document_data, page)
-            page += 1
+                # Save the document
+                self._save_document(document_data, page)
+                page += 1
 
-            if status['pwg:State'] != 'Processing':
-                break
-            time.sleep(1)
+                if status['pwg:State'] != 'Processing':
+                    break
+                time.sleep(1)
 
-        # Check final job status
-        self._check_final_status()
+            # Check final job status
+            self._check_final_status()
+
+        except Exception:
+            # Cancel the scan job if an error occurred
+            if self.job_uri:
+                self.client.cancel_job(self.job_uri)
+            raise
 
     def _save_document(self, data: bytes, page: int) -> None:
         """Save document data to file."""
@@ -399,6 +415,7 @@ def parse_arguments() -> ScannerConfig:
 def process_filename(config: ScannerConfig) -> Path:
     """
     Process and prepare the filename with directory path and auto-increment.
+    Creates the directory if it doesn't exist.
     """
     filename = config.filename
 
@@ -407,8 +424,10 @@ def process_filename(config: ScannerConfig) -> Path:
     if scan_directory:
         filename = os.path.join(scan_directory, filename)
 
-    # Auto-increment filename if it already exists
+    # Auto-increment filename if it already exists, create the directory if needed
     original_path = Path(filename)
+    original_path.parent.mkdir(parents=True, exist_ok=True)
+
     counter = 0
     final_path = original_path
 

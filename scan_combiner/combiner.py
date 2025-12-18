@@ -228,11 +228,12 @@ def parse_arguments() -> CombinerConfig:
 def process_config(config: CombinerConfig) -> tuple[Path, Path]:
     """
     Process configuration and return validated paths.
+    Creates the directory if it doesn't exist.
     """
     scan_directory = Path(config.scan_directory)
 
-    if not scan_directory.is_dir():
-        raise FileNotFoundError(f"Directory '{scan_directory}' does not exist")
+    # Create the directory if it doesn't exist
+    scan_directory.mkdir(parents=True, exist_ok=True)
 
     # Set output filename based on scan directory name
     output_file = scan_directory / f"{scan_directory.name}.pdf"
